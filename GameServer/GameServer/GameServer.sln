@@ -1,0 +1,21 @@
+﻿ Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServer", "src\GameServer\GameServer.csproj", "{660AC44F-2802-482E-80C2-A6EB656CA69E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FixedPoint_1", "src\FixedPoint_1\FixedPoint_1.csproj", "{51BAEA7C-6000-4000-8E95-4D5775457BE1}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {660AC44F-2802-482E-80C2-A6EB656CA69E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {660AC44F-2802-482E-80C2-A6EB656CA69E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {660AC44F-2802-482E-80C2-A6EB656CA69E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {660AC44F-2802-482E-80C2-A6EB656CA69E}.Release|Any CPU.Build.0 = Release|Any CPU
+        {51BAEA7C-6000-4000-8E95-4D5775457BE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {51BAEA7C-6000-4000-8E95-4D5775457BE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {51BAEA7C-6000-4000-8E95-4D5775457BE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {51BAEA7C-6000-4000-8E95-4D5775457BE1}.Release|Any CPU.Build.0 = Release|Any CPU
+    EndGlobalSection
+EndGlobal

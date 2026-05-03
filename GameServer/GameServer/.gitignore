@@ -1,0 +1,115 @@
+# =========================
+# Build
+# =========================
+[Bb]in/
+[Oo]bj/
+out/
+publish/
+
+# =========================
+# User-specific files
+# =========================
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# =========================
+# Visual Studio
+# =========================
+.vs/
+
+# =========================
+# Rider / JetBrains
+# =========================
+.idea/
+*.sln.iml
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# NuGet
+# =========================
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+
+# Ignore local NuGet packages cache
+.nuget/
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Test Results
+# =========================
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# =========================
+# ASP.NET / Web
+# =========================
+wwwroot/lib/
+node_modules/
+
+# =========================
+# Secrets / Local Config
+# =========================
+appsettings.Development.json
+secrets.json
+
+# user secrets
+**/secrets/*
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.cache
+
+# =========================
+# Generated files
+# =========================
+Generated/
+*.generated.cs
+
+# =========================
+# Publish profiles
+# =========================
+Properties/PublishProfiles/
+
+# =========================
+# Database files
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Coverage
+# =========================
+coverage/
+coverage-report/
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
