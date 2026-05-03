@@ -1,0 +1,81 @@
+# ===============
+# Unity generated
+# ===============
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# 内存捕获文件通常很大，且可能包含敏感数据，不需要提交
+[Mm]emoryCaptures/
+
+# 资源元数据 (meta files) 只有在对应的文件夹被忽略时才需要被忽略
+# 下面这行确保 Assets 目录下的所有 .meta 文件都不会被意外忽略
+!/[Aa]ssets/**/*.meta
+
+# 取消注释下面这行可以忽略 Asset Store Tools 插件（如果你不需要提交它）
+# /[Aa]ssets/AssetStoreTools*
+
+# ===============
+# IDE & Code Editors
+# ===============
+# Visual Studio / Visual Studio Code
+.vs/
+.vscode/
+ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# JetBrains Rider / IntelliJ IDEA
+[Aa]ssets/Plugins/Editor/JetBrains*
+.idea/
+
+# Consulo
+.consulo/
+
+# Unity3D generated meta files for ignored files
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# ===============
+# Builds & Packages
+# ===============
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.exe
+
+# ===============
+# Crash Reports & Caches
+# ===============
+sysinfo.txt
+crashlytics-build.properties
+.gradle/
+
+# ===============
+# OS Generated
+# ===============
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
