@@ -1,0 +1,10 @@
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/bin/Debug/netstandard2.1/kcp2k.deps.json
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/bin/Debug/netstandard2.1/kcp2k.dll
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/bin/Debug/netstandard2.1/kcp2k.pdb
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/obj/Debug/netstandard2.1/kcp2k.GeneratedMSBuildEditorConfig.editorconfig
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/obj/Debug/netstandard2.1/kcp2k.AssemblyInfoInputs.cache
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/obj/Debug/netstandard2.1/kcp2k.AssemblyInfo.cs
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/obj/Debug/netstandard2.1/kcp2k.csproj.CoreCompileInputs.cache
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/obj/Debug/netstandard2.1/kcp2k.sourcelink.json
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/obj/Debug/netstandard2.1/kcp2k.dll
+/Users/chuer/forkSource/kcp2k/kcp2k/kcp2k/obj/Debug/netstandard2.1/kcp2k.pdb
