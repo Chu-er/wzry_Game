@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace kcp2k
@@ -45,6 +46,15 @@ namespace kcp2k
         }
 
         // encode 32 bits unsigned int (lsb)
+        // 下面这个函数实现了将一个32位无符号整数（uint）按照小端序编码到字节数组中。
+        // 右移的目的是将value的不同字节部分移到最低有效位，然后通过强制转换(byte)只取最低的8位，依次存储到p[offset]等位置。
+        // 例如：
+        // p[offset + 0]: value的最低8位（value >> 0）
+        // p[offset + 1]: value的第9-16位（value >> 8）
+        // p[offset + 2]: value的第17-24位（value >> 16）
+        // p[offset + 3]: value的最高8位（value >> 24）
+        // 小端序（LSB）是低位字节排在前面，这样有些平台解析数据可直接按内存顺序。
+        // 右移就是取对应的字节位置。
         public static int Encode32U(byte[] p, int offset, uint value)
         {
             p[0 + offset] = (byte)(value >> 0);

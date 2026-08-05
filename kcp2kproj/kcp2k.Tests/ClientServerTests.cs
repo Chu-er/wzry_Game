@@ -76,13 +76,13 @@ namespace kcp2k.Tests
         {
             // logging
 #if UNITY_2018_3_OR_NEWER
-            Log.Info = UnityEngine.Debug.Log;
-            Log.Warning = UnityEngine.Debug.LogWarning;
-            Log.Error = UnityEngine.Debug.LogError;
+            Log.InfoHandler = UnityEngine.Debug.Log;
+            Log.WarningHandler = UnityEngine.Debug.LogWarning;
+            Log.ErrorHandler = UnityEngine.Debug.LogError;
 #else
-            Log.Info = Console.WriteLine;
-            Log.Warning = Console.WriteLine;
-            Log.Error = Console.WriteLine;
+            Log.InfoHandler = Console.WriteLine;
+            Log.WarningHandler = Console.WriteLine;
+            Log.ErrorHandler = Console.WriteLine;
 #endif
         }
 

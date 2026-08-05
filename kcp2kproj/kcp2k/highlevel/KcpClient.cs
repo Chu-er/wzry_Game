@@ -18,12 +18,9 @@ namespace kcp2k
         // config
         protected readonly KcpConfig config;
 
-        // raw receive buffer always needs to be of 'MTU' size, even if
-        // MaxMessageSize is larger. kcp always sends in MTU segments and having
-        // a buffer smaller than MTU would silently drop excess data.
-        // => we need the MTU to fit channel + message!
-        // => protected because someone may overwrite RawReceive but still wants
-        //    to reuse the buffer.
+        // 原始接收缓冲区总是需要为 MTU 大小，即使 MaxMessageSize 更大也是如此。
+        // kcp 总是以 MTU 为单位进行分段发送，如果缓冲区小于 MTU，会悄悄丢弃多余的数据。
+        // => 我们需要 MTU 大小来容纳信道头和消息体！
         protected readonly byte[] rawReceiveBuffer;
 
         // callbacks

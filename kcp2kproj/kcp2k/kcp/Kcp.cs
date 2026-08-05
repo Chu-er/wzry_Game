@@ -38,7 +38,8 @@ namespace kcp2k
         internal int state;
         readonly uint conv;          // conversation
         internal uint mtu;
-        internal uint mss;           // maximum segment size := MTU - OVERHEAD(24)
+        // 最大分片尺寸 := MTU - OVERHEAD(24)，即每个 kcp 分片能携带的最大负载
+        internal uint mss;
         internal uint snd_una;       // unacknowledged. e.g. snd_una is 9 it means 8 has been confirmed, 9 and 10 have been sent
         internal uint snd_nxt;       // forever growing send counter for sequence numbers
         internal uint rcv_nxt;       // forever growing receive counter for sequence numbers
@@ -46,7 +47,7 @@ namespace kcp2k
         internal int rx_rttval;      // average deviation of rtt, used to measure the jitter of rtt
         internal int rx_srtt;        // smoothed round trip time (a weighted average of rtt)
         internal int rx_rto;
-        internal int rx_minrto;
+        internal int rx_minrto;      // RTO 的下限。防止 RTT 极低时 RTO 也跟着变得过小，导致轻微抖动就误判丢包而疯狂重传。普通模式为 RTO_MIN(100ms)，nodelay 模式降为 RTO_NDL(30ms)
         internal uint snd_wnd;       // send window
         internal uint rcv_wnd;       // receive window
         internal uint rmt_wnd;       // remote window
@@ -65,7 +66,8 @@ namespace kcp2k
 
         internal int fastresend;
         internal int fastlimit;
-        internal bool nocwnd;        // congestion control, negated. heavily restricts send/recv window sizes.
+        // 拥塞控制，取反。严重限制发送/接收窗口大小。
+        internal bool nocwnd;
         internal readonly Queue<Segment> snd_queue = new Queue<Segment>(16); // send queue
         internal readonly Queue<Segment> rcv_queue = new Queue<Segment>(16); // receive queue
         // snd_buffer needs index removals.
@@ -1043,8 +1045,7 @@ namespace kcp2k
             return current_ + minimal;
         }
 
-        // ikcp_setmtu
-        // Change MTU (Maximum Transmission Unit) size.
+        //这里传进来的mtu是config.Mtu - METADATA_SIZE_RELIABLE
         public void SetMtu(uint mtu)
         {
             if (mtu < 50 || mtu < OVERHEAD)

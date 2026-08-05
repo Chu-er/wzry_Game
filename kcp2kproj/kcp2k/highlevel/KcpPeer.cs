@@ -13,15 +13,12 @@ namespace kcp2k
         // kcp reliability algorithm
         internal Kcp kcp;
 
-        // security cookie to prevent UDP spoofing.
-        // credits to IncludeSec for disclosing the issue.
-        //
-        // server passes the expected cookie to the client's KcpPeer.
-        // KcpPeer sends cookie to the connected client.
-        // KcpPeer only accepts packets which contain the cookie.
-        // => cookie can be a random number, but it needs to be cryptographically
-        //    secure random that can't be easily predicted.
-        // => cookie can be hash(ip, port) BUT only if salted to be not predictable
+        // 安全Cookie，用于防止UDP欺骗攻击。 感谢IncludeSec披露该问题。
+        // 服务器会将期望的cookie传递给客户端的KcpPeer。
+        // KcpPeer在与客户端通信时会发送cookie。
+        // KcpPeer只接受包含正确cookie的数据包。
+        // => cookie可以是一个随机数，但必须是不可预测且加密安全的随机数。
+        // => cookie也可以是hash(ip, port)，但必须加盐，否则容易被预测。
         internal uint cookie;
 
         // state: connected as soon as we create the peer.
@@ -51,7 +48,7 @@ namespace kcp2k
         // 重要：需要的大小为 1 字节头部 + 最大消息内容长度
         readonly byte[] kcpSendBuffer;// = new byte[1 + ReliableMaxMessageSize];
 
-        // raw send buffer is exactly MTU.
+        // 原始发送缓冲区的大小正好等于 MTU。
         readonly byte[] rawSendBuffer;
 
         // send a ping occasionally so we don't time out on the other end.
@@ -107,15 +104,15 @@ namespace kcp2k
         static int ReliableMaxMessageSize_Unconstrained(int mtu, uint rcv_wnd) =>
             (mtu - Kcp.OVERHEAD - METADATA_SIZE_RELIABLE) * ((int)rcv_wnd - 1) - 1;
 
-        // kcp encodes 'frg' as 1 byte.
-        // max message size can only ever allow up to 255 fragments.
-        //   WND_RCV gives 127 fragments.
-        //   WND_RCV * 2 gives 255 fragments.
-        // so we can limit max message size by limiting rcv_wnd parameter.
+        // kcp 用 1 个字节编码 'frg'（分片序号）。
+        // 因此最大消息尺寸最多只能允许 255 个分片。
+        //   WND_RCV 对应 127 个分片。
+        //   WND_RCV * 2 对应 255 个分片。
+        // 所以可以通过限制 rcv_wnd 参数来限制最大消息尺寸。
         public static int ReliableMaxMessageSize(int mtu, uint rcv_wnd) =>
             ReliableMaxMessageSize_Unconstrained(mtu, Math.Min(rcv_wnd, Kcp.FRG_MAX));
 
-        // unreliable max message size is simply MTU - channel header - kcp header
+        // 不可靠通道的最大消息尺寸就是 MTU - 通道头部 - kcp 头部
         public static int UnreliableMaxMessageSize(int mtu) =>
             mtu - METADATA_SIZE_UNRELIABLE - 1;
 
@@ -165,8 +162,8 @@ namespace kcp2k
             unreliableMax = UnreliableMaxMessageSize(config.Mtu);
             reliableMax = ReliableMaxMessageSize(config.Mtu, config.ReceiveWindowSize);
 
-            // create message buffers AFTER window size is set
-            // see comments on buffer definition for the "+1" part
+            // 必须在窗口大小设置完之后再创建消息缓冲区
+            // "+1" 的含义参见缓冲区定义处的注释
             kcpMessageBuffer = new byte[1 + reliableMax];
             kcpSendBuffer    = new byte[1 + reliableMax];
         }
@@ -181,20 +178,16 @@ namespace kcp2k
             lastReceiveTime = 0;
             lastPingTime = 0;
             watch.Restart(); // start at 0 each time
-
             // set up kcp over reliable channel (that's what kcp is for)
             kcp = new Kcp(0, RawSendReliable);
-
+            
             // set nodelay.
-            // note that kcp uses 'nocwnd' internally so we negate the parameter
+            // 这句话的意思是：kcp内部实际使用的是'nocwnd'（关闭拥塞控制窗口），
+            // 而外部配置通常用'congestionWindow'（是否开启拥塞控制），
+            // 所以这里需要对参数取反再传给kcp。
             kcp.SetNoDelay(config.NoDelay ? 1u : 0u, config.Interval, config.FastResend, !config.CongestionWindow);
             kcp.SetWindowSize(config.SendWindowSize, config.ReceiveWindowSize);
 
-            // IMPORTANT: high level needs to add 1 channel byte to each raw
-            // message. so while Kcp.MTU_DEF is perfect, we actually need to
-            // tell kcp to use MTU-1 so we can still put the header into the
-            // message afterwards.
-            // 为什么使用 config.Mtu - 5 呢？
             // KCP 本身的 MTU 理想情况下等于 underlying transport (config.Mtu)。
             // 但高层协议（KcpPeer）在每条消息前加了1个字节的信道类型头部，
             // 再加上 KCP 内部包头（24 字节），总共比原始 MTU 多了1字节元数据。

@@ -8,9 +8,9 @@ using kcp2k;
 Console.WriteLine("kcp example");
 
 // setup logging
-Log.Info = Console.WriteLine;
-Log.Warning = Console.WriteLine;
-Log.Error = Console.WriteLine;
+Log.InfoHandler = Console.WriteLine;
+Log.WarningHandler = Console.WriteLine;
+Log.ErrorHandler = Console.WriteLine;
 
 // common config
 const ushort port = 7777;

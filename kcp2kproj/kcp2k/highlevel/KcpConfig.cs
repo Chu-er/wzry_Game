@@ -62,7 +62,8 @@ namespace kcp2k
         /// </summary>
         public uint SendWindowSize;
         /// <summary>
-        /// ReceiveWindowSize：接收窗口大小。指定 KCP 可缓存的还未交付给应用层的最大数据包数量，增大此值可以防止因应用层处理不及时而丢包。
+        /// 接收窗口大小。指定 KCP 可缓存的还未交付给应用层的最大数据包数量，增大此值可以防止因应用层处理不及时而丢包。
+        /// 单位是“包”，是数据包（KCP 分片）个数。
         /// </summary>
         public uint ReceiveWindowSize;
 
