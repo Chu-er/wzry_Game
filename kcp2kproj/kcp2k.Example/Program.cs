@@ -3,14 +3,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using kcp2k;
-
-// greeting
-Console.WriteLine("kcp example");
-
 // setup logging
 Log.InfoHandler = Console.WriteLine;
 Log.WarningHandler = Console.WriteLine;
 Log.ErrorHandler = Console.WriteLine;
+
+Log.Info("[KCP] Example: starting");
 
 // common config
 const ushort port = 7777;
@@ -23,7 +21,7 @@ KcpConfig config = new KcpConfig(
     // run tests without it so they work on all platforms.
     
     DualMode: false,
-    Interval: 1, // 1ms so at interval code at least runs.
+    Interval: 10, // 10ms so at interval code at least runs.
     Timeout: 2000,
 
     // large window sizes so large messages are flushed with very few
@@ -83,7 +81,9 @@ client.Connect("127.0.0.1", port);
 UpdateSeveralTimes(5);
 
 // send client to server
-client.Send(new byte[]{0x01, 0x02}, KcpChannel.Reliable);
+client.Send(new byte[] { 0x01, 0x02 }, KcpChannel.Reliable);
+
+
 UpdateSeveralTimes(10);
 
 // send server to client

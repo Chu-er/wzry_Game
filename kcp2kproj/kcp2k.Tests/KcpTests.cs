@@ -16,20 +16,20 @@ namespace kcp2k.Tests
 
 
             // insert '1' should insert into empty buffer
-            Segment one = new Segment{sn=1};
+            Segment one = new Segment{seq_number=1};
             kcp.InsertSegmentInReceiveBuffer(one);
             Assert.That(kcp.rcv_buf.Count, Is.EqualTo(1));
             Assert.That(kcp.rcv_buf[0], Is.EqualTo(one));
 
             // insert '3' should insert after '1'
-            Segment three = new Segment{sn=3};
+            Segment three = new Segment{seq_number=3};
             kcp.InsertSegmentInReceiveBuffer(three);
             Assert.That(kcp.rcv_buf.Count, Is.EqualTo(2));
             Assert.That(kcp.rcv_buf[0], Is.EqualTo(one));
             Assert.That(kcp.rcv_buf[1], Is.EqualTo(three));
 
             // insert '2' should insert before '3'
-            Segment two = new Segment{sn=2};
+            Segment two = new Segment{seq_number=2};
             kcp.InsertSegmentInReceiveBuffer(two);
             Assert.That(kcp.rcv_buf.Count, Is.EqualTo(3));
             Assert.That(kcp.rcv_buf[0], Is.EqualTo(one));
@@ -37,7 +37,7 @@ namespace kcp2k.Tests
             Assert.That(kcp.rcv_buf[2], Is.EqualTo(three));
 
             // insert '0' should insert before '1'
-            Segment zero = new Segment{sn=0};
+            Segment zero = new Segment{seq_number=0};
             kcp.InsertSegmentInReceiveBuffer(zero);
             Assert.That(kcp.rcv_buf.Count, Is.EqualTo(4));
             Assert.That(kcp.rcv_buf[0], Is.EqualTo(zero));
@@ -46,7 +46,7 @@ namespace kcp2k.Tests
             Assert.That(kcp.rcv_buf[3], Is.EqualTo(three));
 
             // insert '2' again should do nothing because duplicate
-            Segment two_again = new Segment{sn=2};
+            Segment two_again = new Segment{seq_number=2};
             kcp.InsertSegmentInReceiveBuffer(two_again);
             Assert.That(kcp.rcv_buf.Count, Is.EqualTo(4));
             Assert.That(kcp.rcv_buf[0], Is.EqualTo(zero));
@@ -66,9 +66,9 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=1};
-            Segment two = new Segment{sn=2};
-            Segment three = new Segment{sn=3};
+            Segment one = new Segment{seq_number=1};
+            Segment two = new Segment{seq_number=2};
+            Segment three = new Segment{seq_number=3};
             kcp.snd_buf.Add(one);
             kcp.snd_buf.Add(two);
             kcp.snd_buf.Add(three);
@@ -92,11 +92,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=1};
+            Segment one = new Segment{seq_number=1};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=2};
+            Segment two = new Segment{seq_number=2};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=3};
+            Segment three = new Segment{seq_number=3};
             kcp.snd_buf.Add(three);
 
             // parse ack only removes if sn < snd_nxt
@@ -118,11 +118,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=1};
+            Segment one = new Segment{seq_number=1};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=2};
+            Segment two = new Segment{seq_number=2};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=3};
+            Segment three = new Segment{seq_number=3};
             kcp.snd_buf.Add(three);
 
             // parse ack only removes if sn < snd_nxt
@@ -144,11 +144,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=1};
+            Segment one = new Segment{seq_number=1};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=2};
+            Segment two = new Segment{seq_number=2};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=3};
+            Segment three = new Segment{seq_number=3};
             kcp.snd_buf.Add(three);
 
             // parse ack only removes if sn < snd_nxt.
@@ -187,11 +187,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=1};
+            Segment one = new Segment{seq_number=1};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=2};
+            Segment two = new Segment{seq_number=2};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=3};
+            Segment three = new Segment{seq_number=3};
             kcp.snd_buf.Add(three);
 
             // parse_una should remove all segments < una from send buffer
@@ -212,11 +212,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=1};
+            Segment one = new Segment{seq_number=1};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=2};
+            Segment two = new Segment{seq_number=2};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=3};
+            Segment three = new Segment{seq_number=3};
             kcp.snd_buf.Add(three);
 
             // parse_una should remove all segments < una from send buffer
@@ -236,11 +236,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=1};
+            Segment one = new Segment{seq_number=1};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=2};
+            Segment two = new Segment{seq_number=2};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=3};
+            Segment three = new Segment{seq_number=3};
             kcp.snd_buf.Add(three);
 
             // parse_una should remove all segments < una from send buffer
@@ -274,11 +274,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=2};
+            Segment one = new Segment{seq_number=2};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=3};
+            Segment two = new Segment{seq_number=3};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=4};
+            Segment three = new Segment{seq_number=4};
             kcp.snd_buf.Add(three);
 
             // sn needs to be between snd_una and snd_nxt
@@ -304,11 +304,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=2};
+            Segment one = new Segment{seq_number=2};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=3};
+            Segment two = new Segment{seq_number=3};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=4};
+            Segment three = new Segment{seq_number=4};
             kcp.snd_buf.Add(three);
 
             // sn needs to be between snd_una and snd_nxt
@@ -333,11 +333,11 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // insert three segments into send buffer
-            Segment one = new Segment{sn=2};
+            Segment one = new Segment{seq_number=2};
             kcp.snd_buf.Add(one);
-            Segment two = new Segment{sn=3};
+            Segment two = new Segment{seq_number=3};
             kcp.snd_buf.Add(two);
-            Segment three = new Segment{sn=4};
+            Segment three = new Segment{seq_number=4};
             kcp.snd_buf.Add(three);
 
             // sn needs to be between snd_una and snd_nxt
@@ -471,8 +471,8 @@ namespace kcp2k.Tests
             Kcp kcp = new Kcp(0, Output);
 
             // add some to send buffer and send queue
-            kcp.snd_buf.Add(new Segment{sn=2});
-            kcp.snd_buf.Add(new Segment{sn=3});
+            kcp.snd_buf.Add(new Segment{seq_number=2});
+            kcp.snd_buf.Add(new Segment{seq_number=3});
 
             // ShrinkBuf should set snd_una to first send buffer element's 'sn'
             kcp.ShrinkBuf();

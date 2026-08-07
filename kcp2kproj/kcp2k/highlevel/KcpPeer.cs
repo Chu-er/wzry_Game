@@ -101,8 +101,12 @@ namespace kcp2k
         //          由于“队首阻塞”，如果有最大尺寸的消息正在传输，其它消息必须等待其送达。
         //          => 换句话说，不要频繁使用最大消息尺寸作为批处理手段。
         //          => 实际使用中，多采用不可靠通道的最大消息批量处理性能更佳！
-        static int ReliableMaxMessageSize_Unconstrained(int mtu, uint rcv_wnd) =>
-            (mtu - Kcp.OVERHEAD - METADATA_SIZE_RELIABLE) * ((int)rcv_wnd - 1) - 1;
+        static int ReliableMaxMessageSize_Unconstrained(int mtu, uint rcv_wnd)
+        {
+            int result = (mtu - Kcp.OVERHEAD - METADATA_SIZE_RELIABLE) * ((int)rcv_wnd - 1) - 1;
+            Log.Info($"[KCP] 最大消息大小计算: mtu={mtu}, rcv_wnd={rcv_wnd}, result={result}");
+            return result;
+        }
 
         // kcp 用 1 个字节编码 'frg'（分片序号）。
         // 因此最大消息尺寸最多只能允许 255 个分片。
@@ -132,7 +136,7 @@ namespace kcp2k
 
         // calculate max message sizes based on mtu and wnd only once
         public readonly int unreliableMax;
-        // reliable通道允许发送的最大消息尺寸，在构造函数中根据mtu和接收窗口配置计算得出。
+        /// <summary>reliable通道允许发送的最大消息尺寸，在构造函数中根据mtu和接收窗口配置计算得出。注意：这里的最大消息尺寸是字节数，不是分片数。</summary>
         public readonly int reliableMax;
 
 
@@ -183,7 +187,7 @@ namespace kcp2k
             
             // set nodelay.
             // 这句话的意思是：kcp内部实际使用的是'nocwnd'（关闭拥塞控制窗口），
-            // 而外部配置通常用'congestionWindow'（是否开启拥塞控制），
+            // 而外部配置通常用'congestionWindow'（是否开启拥塞控制）， 
             // 所以这里需要对参数取反再传给kcp。
             kcp.SetNoDelay(config.NoDelay ? 1u : 0u, config.Interval, config.FastResend, !config.CongestionWindow);
             kcp.SetWindowSize(config.SendWindowSize, config.ReceiveWindowSize);
@@ -506,6 +510,7 @@ namespace kcp2k
             }
         }
 
+        /// <summary>由上层每Tick调用，处理发送队列中的消息 </summary>
         public virtual void TickOutgoing()
         {
             try
@@ -553,6 +558,10 @@ namespace kcp2k
             }
         }
 
+        /// <summary>
+        /// 上层处理完Socket收到的数据(主要是 channel和cookie)后，剩下的输入到kcp
+        /// </summary>
+        /// <param name="message"></param>
         protected void OnRawInputReliable(ArraySegment<byte> message)
         {
             // input into kcp, but skip channel byte
@@ -563,7 +572,10 @@ namespace kcp2k
                 Log.Warning($"[KCP] {GetType()}: Input failed with error={input} for buffer with length={message.Count - 1}");
             }
         }
-
+        /// <summary>
+        /// 上层处理完Socket收到的数据(主要是 channel和cookie)后，剩下的输入到kcp
+        /// </summary>
+        /// <param name="message"></param>
         protected void OnRawInputUnreliable(ArraySegment<byte> message)
         {
             // need at least one byte for the KcpHeader enum

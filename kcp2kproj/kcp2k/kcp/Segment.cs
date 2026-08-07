@@ -13,7 +13,7 @@ namespace kcp2k
         internal uint frg;
         internal uint wnd;      // window size that the receive can currently receive
         internal uint ts;       // timestamp
-        internal uint sn;       // sequence number
+        internal uint seq_number;       // sequence number
         internal uint una;
         internal uint resendts; // resend timestamp
         internal int  rto;
@@ -48,7 +48,7 @@ namespace kcp2k
             offset += Utils.Encode8u(ptr, offset, (byte)frg);
             offset += Utils.Encode16U(ptr, offset, (ushort)wnd);
             offset += Utils.Encode32U(ptr, offset, ts);
-            offset += Utils.Encode32U(ptr, offset, sn);
+            offset += Utils.Encode32U(ptr, offset, seq_number);
             offset += Utils.Encode32U(ptr, offset, una);
             offset += Utils.Encode32U(ptr, offset, (uint)data.Position);
 
@@ -64,7 +64,7 @@ namespace kcp2k
             frg = 0;
             wnd = 0;
             ts  = 0;
-            sn  = 0;
+            seq_number  = 0;
             una = 0;
             rto = 0;
             xmit = 0;

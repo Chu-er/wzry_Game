@@ -10,10 +10,9 @@ namespace kcp2k
     {
         // don't react on 0x00. might help to filter out random noise.
         Hello      = 1,
-        // ping goes over reliable & KcpHeader for now. could go over unreliable
-        // too. there is no real difference except that this is easier because
-        // we already have a KcpHeader for reliable messages.
-        // ping is only used to keep it alive, so latency doesn't matter.
+        // ping 目前走可靠通道和 KcpHeader。其实也可以走不可靠通道，
+        // 两者并无实质区别，只是可靠消息本来就有 KcpHeader，这样实现更简单。
+        // ping 仅用于保活，所以延迟高低无关紧要。
         Ping       = 2,
         Pong       = 4, // '4' not '3' in order to keep backwards compatibility
         Data       = 3,

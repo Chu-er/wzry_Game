@@ -16,7 +16,7 @@ namespace kcp2k.Tests
             seg.frg = 0x06;
             seg.wnd = 0x0807;
             seg.ts = 0x0C0B0A09;
-            seg.sn = 0x100F0E0D;
+            seg.seq_number = 0x100F0E0D;
             seg.una = 0x14131211;
 
             // encode with offset
@@ -66,7 +66,7 @@ namespace kcp2k.Tests
             seg.frg = 0x06;
             seg.wnd = 0x0807;
             seg.ts = 0x0C0B0A09;
-            seg.sn = 0x100F0E0D;
+            seg.seq_number = 0x100F0E0D;
             seg.una = 0x14131211;
             seg.data.WriteByte(0xFF);
 
@@ -77,7 +77,7 @@ namespace kcp2k.Tests
             Assert.That(seg.frg, Is.EqualTo(0));
             Assert.That(seg.wnd, Is.EqualTo(0));
             Assert.That(seg.ts, Is.EqualTo(0));
-            Assert.That(seg.sn, Is.EqualTo(0));
+            Assert.That(seg.seq_number, Is.EqualTo(0));
             Assert.That(seg.una, Is.EqualTo(0));
             Assert.That(seg.rto, Is.EqualTo(0));
             Assert.That(seg.xmit, Is.EqualTo(0));

@@ -40,14 +40,20 @@ namespace kcp2k
         internal uint mtu;
         // 最大分片尺寸 := MTU - OVERHEAD(24)，即每个 kcp 分片能携带的最大负载
         internal uint mss;
-        internal uint snd_una;       // unacknowledged. e.g. snd_una is 9 it means 8 has been confirmed, 9 and 10 have been sent
-        internal uint snd_nxt;       // forever growing send counter for sequence numbers
-        internal uint rcv_nxt;       // forever growing receive counter for sequence numbers
+        /// <summary>最小的未确认序号。例如 snd_una 为 9，表示 8 及之前的包已被确认，9、10 已发出但还没收到确认</summary>
+        internal uint snd_una;
+        /// <summary>下一个要分配的序号。snd_nxt 永远递增，用于分配新的序号</summary>
+        internal uint snd_nxt;
+        /// <summary>下一个要分配的序号。rcv_nxt 永远递增，用于分配新的序号</summary>
+        internal uint rcv_nxt;
         internal uint ssthresh;      // slow start threshold
         internal int rx_rttval;      // average deviation of rtt, used to measure the jitter of rtt
         internal int rx_srtt;        // smoothed round trip time (a weighted average of rtt)
         internal int rx_rto;
-        internal int rx_minrto;      // RTO 的下限。防止 RTT 极低时 RTO 也跟着变得过小，导致轻微抖动就误判丢包而疯狂重传。普通模式为 RTO_MIN(100ms)，nodelay 模式降为 RTO_NDL(30ms)
+        /// <summary>RTO 的下限。防止 RTT 极低时 RTO 也跟着变得过小，
+        /// 导致轻微抖动就误判丢包而疯狂重传。普通模式为 RTO_MIN(100ms)，
+        /// nodelay 模式降为 RTO_NDL(30ms)</summary>
+        internal int rx_minrto;
         internal uint snd_wnd;       // send window
         internal uint rcv_wnd;       // receive window
         internal uint rmt_wnd;       // remote window
@@ -208,7 +214,7 @@ namespace kcp2k
             int removed = 0;
             foreach (Segment seg in rcv_buf)
             {
-                if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
+                if (seg.seq_number == rcv_nxt && rcv_queue.Count < rcv_wnd)
                 {
                     // can't remove while iterating. remember how many to remove
                     // and do it after the loop.
@@ -357,7 +363,7 @@ namespace kcp2k
             if (snd_buf.Count > 0)
             {
                 Segment seg = snd_buf[0];
-                snd_una = seg.sn;
+                snd_una = seg.seq_number;
             }
             else
             {
@@ -377,14 +383,14 @@ namespace kcp2k
             {
                 // is this the segment?
                 Segment seg = snd_buf[i];
-                if (sn == seg.sn)
+                if (sn == seg.seq_number)
                 {
                     // remove and return
                     snd_buf.RemoveAt(i);
                     SegmentDelete(seg);
                     break;
                 }
-                if (Utils.TimeDiff(sn, seg.sn) < 0)
+                if (Utils.TimeDiff(sn, seg.seq_number) < 0)
                 {
                     break;
                 }
@@ -399,7 +405,7 @@ namespace kcp2k
             foreach (Segment seg in snd_buf)
             {
                 // if (Utils.TimeDiff(una, seg.sn) > 0)
-                if (seg.sn < una)
+                if (seg.seq_number < una)
                 {
                     // can't remove while iterating. remember how many to remove
                     // and do it after the loop.
@@ -431,11 +437,11 @@ namespace kcp2k
             foreach (Segment seg in snd_buf)
             {
                 // if (Utils.TimeDiff(sn, seg.sn) < 0)
-                if (sn < seg.sn)
+                if (sn < seg.seq_number)
                 {
                     break;
                 }
-                else if (sn != seg.sn)
+                else if (sn != seg.seq_number)
                 {
 #if !FASTACK_CONSERVE
                     seg.fastack++;
@@ -457,7 +463,7 @@ namespace kcp2k
         // ikcp_parse_data
         void ParseData(Segment newseg)
         {
-            uint sn = newseg.sn;
+            uint sn = newseg.seq_number;
 
             if (Utils.TimeDiff(sn, rcv_nxt + rcv_wnd) >= 0 ||
                 Utils.TimeDiff(sn, rcv_nxt) < 0)
@@ -487,13 +493,13 @@ namespace kcp2k
             for (i = rcv_buf.Count - 1; i >= 0; i--)
             {
                 Segment seg = rcv_buf[i];
-                if (seg.sn == newseg.sn)
+                if (seg.seq_number == newseg.seq_number)
                 {
                     // duplicate segment found. nothing will be added.
                     repeat = true;
                     break;
                 }
-                if (Utils.TimeDiff(newseg.sn, seg.sn) > 0)
+                if (Utils.TimeDiff(newseg.seq_number, seg.seq_number) > 0)
                 {
                     // this entry's sn is < newseg.sn, so let's stop
                     break;
@@ -523,7 +529,7 @@ namespace kcp2k
                 // move segments while they are in 'rcv_nxt' sequence order.
                 // some may still be missing and inserted later, in this case it stops immediately
                 // because segments always need to be received in the exact sequence order.
-                if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
+                if (seg.seq_number == rcv_nxt && rcv_queue.Count < rcv_wnd)
                 {
                     // can't remove while iterating. remember how many to remove
                     // and do it after the loop.
@@ -570,9 +576,8 @@ namespace kcp2k
                 offset += Utils.Decode16U(data, offset, out ushort wnd);
                 offset += Utils.Decode32U(data, offset, out uint ts);
                 offset += Utils.Decode32U(data, offset, out uint sn);
-                offset += Utils.Decode32U(data, offset, out uint una);
+                offset += Utils.Decode32U(data, offset, out uint unacknowledged);
                 offset += Utils.Decode32U(data, offset, out uint len);
-
                 // reduce remaining size by what was read
                 size -= OVERHEAD;
 
@@ -586,7 +591,7 @@ namespace kcp2k
                     return -3;
 
                 rmt_wnd = wnd;
-                ParseUna(una);
+                ParseUna(unacknowledged);
                 ShrinkBuf();
 
                 if (cmd == CMD_ACK)
@@ -633,8 +638,8 @@ namespace kcp2k
                             seg.frg = frg;
                             seg.wnd = wnd;
                             seg.ts  = ts;
-                            seg.sn  = sn;
-                            seg.una = una;
+                            seg.seq_number  = sn;
+                            seg.una = unacknowledged;
                             if (len > 0)
                             {
                                 seg.data.Write(data, offset, (int)len);
@@ -747,13 +752,13 @@ namespace kcp2k
             {
                 MakeSpace(ref size, OVERHEAD);
                 // ikcp_ack_get assigns ack[i] to seg.sn, seg.ts
-                seg.sn = ack.serialNumber;
+                seg.seq_number = ack.serialNumber;
                 seg.ts = ack.timestamp;
                 size += seg.Encode(buffer, size);
             }
             acklist.Clear();
 
-            // probe window size (if remote window size equals zero)
+            // 探测对端窗口大小（当对端窗口为 0 时）
             if (rmt_wnd == 0)
             {
                 if (probe_wait == 0)
@@ -803,13 +808,15 @@ namespace kcp2k
             // it's send window, or remote window, whatever is smaller.
             // for our max
             uint cwnd_ = Math.Min(snd_wnd, rmt_wnd);
-
-            // double negative: if congestion window is enabled:
-            // limit window size to cwnd.
+            
+            // Log.Info($"[Kcp] {(this is KcpServer ? "Server" : this is KcpClient ? "Client" : GetType().Name)} cwnd_={cwnd_}");
+       
+            // 双重否定：若开启了拥塞窗口，
+            // 则把可发送窗口限制为 cwnd。
             //
-            // note this may heavily limit window sizes.
-            // for our max message size test with super large windows of 32k,
-            // 'congestion window' limits it down from 32.000 to 2.
+            // 注意这可能会大幅压缩窗口大小。
+            // 在我们用超大窗口 32k 做最大消息尺寸测试时，
+            // “拥塞窗口”会把它从 32000 压到 2。
             if (!nocwnd) cwnd_ = Math.Min(cwnd, cwnd_);
 
             // move cwnd_ 'window size' messages from snd_queue to snd_buf
@@ -826,7 +833,7 @@ namespace kcp2k
                 newseg.cmd = CMD_PUSH;
                 newseg.wnd = seg.wnd;
                 newseg.ts = current;
-                newseg.sn = snd_nxt;
+                newseg.seq_number = snd_nxt;
                 snd_nxt += 1; // increase sequence number for next segment
                 newseg.una = rcv_nxt;
                 newseg.resendts = current;
@@ -1065,24 +1072,23 @@ namespace kcp2k
             this.interval = interval;
         }
 
-        // ikcp_nodelay
-        // configuration: https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
-        //   nodelay : Whether nodelay mode is enabled, 0 is not enabled; 1 enabled.
-        //   interval ：Protocol internal work interval, in milliseconds, such as 10 ms or 20 ms.
-        //   resend ：Fast retransmission mode, 0 represents off by default, 2 can be set (2 ACK spans will result in direct retransmission)
-        //   nc ：Whether to turn off flow control, 0 represents “Do not turn off” by default, 1 represents “Turn off”.
-        // Normal Mode: ikcp_nodelay(kcp, 0, 40, 0, 0);
-        // Turbo Mode： ikcp_nodelay(kcp, 1, 10, 2, 1);
+        // 配置说明：https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
+        //   nodelay ：是否启用 nodelay 模式，0 关闭；1 开启。
+        //   interval ：协议内部工作间隔，单位毫秒，例如 10 ms 或 20 ms。
+        //   resend ：快速重传模式，0 表示默认关闭，可设为 2（跨越 2 个 ACK 就直接重传）
+        //   nc ：是否关闭流控，0 表示默认“不关闭”，1 表示“关闭”。
+        // 普通模式：ikcp_nodelay(kcp, 0, 40, 0, 0);
+        // 极速模式：ikcp_nodelay(kcp, 1, 10, 2, 1);
         public void SetNoDelay(uint nodelay, uint interval = INTERVAL, int resend = 0, bool nocwnd = false)
         {
             this.nodelay = nodelay;
             if (nodelay != 0)
             {
-                rx_minrto = RTO_NDL;
+                rx_minrto = RTO_NDL;// 无延迟模式下，最小 RTO 为 30ms
             }
             else
             {
-                rx_minrto = RTO_MIN;
+                rx_minrto = RTO_MIN;// 普通模式下，最小 RTO 为 100ms
             }
 
             if (interval >= 0)
