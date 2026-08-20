@@ -48,7 +48,7 @@ namespace kcp2k
         // 重要：需要的大小为 1 字节头部 + 最大消息内容长度
         readonly byte[] kcpSendBuffer;// = new byte[1 + ReliableMaxMessageSize];
 
-        // 原始发送缓冲区的大小正好等于 MTU。
+        /// <summary> 原始发送缓冲区的大小正好等于 MTU。这是 kcp 实际发送的数据。</summary>
         readonly byte[] rawSendBuffer;
 
         // send a ping occasionally so we don't time out on the other end.
@@ -183,7 +183,7 @@ namespace kcp2k
             lastPingTime = 0;
             watch.Restart(); // start at 0 each time
             // set up kcp over reliable channel (that's what kcp is for)
-            kcp = new Kcp(0, RawSendReliable);
+            kcp = new Kcp(0, RawSendReliable, GetType().Name);
             
             // set nodelay.
             // 这句话的意思是：kcp内部实际使用的是'nocwnd'（关闭拥塞控制窗口），

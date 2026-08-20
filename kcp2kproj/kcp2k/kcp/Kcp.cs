@@ -15,7 +15,7 @@ namespace kcp2k
         public const int RTO_DEF = 200;            // default RTO
         public const int RTO_MAX = 60000;          // maximum RTO
         public const int CMD_PUSH = 81;            // cmd: push data
-        public const int CMD_ACK  = 82;            // cmd: ack
+        public const int CMD_ACK = 82;            // cmd: ack
         public const int CMD_WASK = 83;            // cmd: window probe (ask)
         public const int CMD_WINS = 84;            // cmd: window size (tell/insert)
         public const int ASK_SEND = 1;             // need to send CMD_WASK
@@ -34,17 +34,19 @@ namespace kcp2k
         public const int PROBE_LIMIT = 120000;     // up to 120 secs to probe window
         public const int FASTACK_LIMIT = 5;        // max times to trigger fastack
 
-        // kcp members.
+
+        ///<summary>KCP当前连接状态，通常为0表示正常，-1表示连接丢失（超过dead_link未收到ACK），可用于检测死连接</summary>
         internal int state;
+
         readonly uint conv;          // conversation
         internal uint mtu;
         // 最大分片尺寸 := MTU - OVERHEAD(24)，即每个 kcp 分片能携带的最大负载
         internal uint mss;
         /// <summary>最小的未确认序号。例如 snd_una 为 9，表示 8 及之前的包已被确认，9、10 已发出但还没收到确认</summary>
         internal uint snd_una;
-        /// <summary>下一个要分配的序号。snd_nxt 永远递增，用于分配新的序号</summary>
+        /// <summary>下一个要分配的序号。永远递增，用于分配新的序号</summary>
         internal uint snd_nxt;
-        /// <summary>下一个要分配的序号。rcv_nxt 永远递增，用于分配新的序号</summary>
+        /// <summary>下一个要分配的序号 永远递增，用于分配新的序号</summary>
         internal uint rcv_nxt;
         internal uint ssthresh;      // slow start threshold
         internal int rx_rttval;      // average deviation of rtt, used to measure the jitter of rtt
@@ -54,7 +56,8 @@ namespace kcp2k
         /// 导致轻微抖动就误判丢包而疯狂重传。普通模式为 RTO_MIN(100ms)，
         /// nodelay 模式降为 RTO_NDL(30ms)</summary>
         internal int rx_minrto;
-        internal uint snd_wnd;       // send window
+        /// <summary>发送窗口管的是飞行中未被确认的数据包数量,只影响从snd_queue->snd_buf的速度</summary>
+        internal uint snd_wnd;
         internal uint rcv_wnd;       // receive window
         internal uint rmt_wnd;       // remote window
         internal uint cwnd;          // congestion window
@@ -103,26 +106,31 @@ namespace kcp2k
             32
         );
 
+        /// <summary>chuer added for debuging</summary>
+        private readonly string _name;
+        /// <summary>chuer added for debuging</summary>
+        public bool debug = false;
         // ikcp_create
         // create a new kcp control object, 'conv' must equal in two endpoint
         // from the same connection.
-        public Kcp(uint conv, Action<byte[], int> output)
+        public Kcp(uint conv, Action<byte[], int> output,string name)
         {
-            this.conv   = conv;
+            this.conv = conv;
             this.output = output;
             snd_wnd = WND_SND;
             rcv_wnd = WND_RCV;
             rmt_wnd = WND_RCV;
             mtu = MTU_DEF;
             mss = mtu - OVERHEAD;
-            rx_rto    = RTO_DEF;
+            rx_rto = RTO_DEF;
             rx_minrto = RTO_MIN;
-            interval  = INTERVAL;
-            ts_flush  = INTERVAL;
-            ssthresh  = THRESH_INIT;
+            interval = INTERVAL;
+            ts_flush = INTERVAL;
+            ssthresh = THRESH_INIT;
             fastlimit = FASTACK_LIMIT;
             dead_link = DEADLINK;
             buffer = new byte[(mtu + OVERHEAD) * 3];
+            _name = name;
         }
 
         // ikcp_segment_new
@@ -294,7 +302,7 @@ namespace kcp2k
 
             // calculate amount of fragments necessary for 'len'
             if (len <= mss) count = 1;
-            else count = (int)((len + mss - 1) / mss);
+            else count = (int)((len + mss - 1) / mss);//用整数向上取整除法
 
             // IMPORTANT kcp encodes 'frg' as 1 byte.
             // so we can only support up to 255 fragments.
@@ -303,11 +311,7 @@ namespace kcp2k
             if (count > FRG_MAX)
                 throw new Exception($"Send len={len} requires {count} fragments, but kcp can only handle up to {FRG_MAX} fragments.");
 
-            // original kcp uses WND_RCV const instead of rcv_wnd runtime:
-            // https://github.com/skywind3000/kcp/pull/291/files
-            // which always limits max message size to 144 KB:
-            //if (count >= WND_RCV) return -2;
-            // using configured rcv_wnd uncorks max message size to 'any':
+            //数量不能比接收窗口大 否则即使包都收到了,队列也塞不下整条消息,拼包永远卡死
             if (count >= rcv_wnd) return -2;
 
             if (count == 0) count = 1;
@@ -326,7 +330,7 @@ namespace kcp2k
 
                 // set fragment number.
                 // if the message requires no fragmentation, then
-                // seg.frg becomes 1-0-1 = 0
+                // seg.frg becomes 1-0-1 = 0 
                 seg.frg = (uint)(count - i - 1);
                 snd_queue.Enqueue(seg);
                 offset += size;
@@ -350,7 +354,7 @@ namespace kcp2k
                 int delta = rtt - rx_srtt;
                 if (delta < 0) delta = -delta;
                 rx_rttval = (3 * rx_rttval + delta) / 4;
-                rx_srtt   = (7 * rx_srtt + rtt) / 8;
+                rx_srtt = (7 * rx_srtt + rtt) / 8;
                 if (rx_srtt < 1) rx_srtt = 1;
             }
             int rto = rx_srtt + Math.Max((int)interval, 4 * rx_rttval);
@@ -457,7 +461,7 @@ namespace kcp2k
         // appends an ack.
         void AckPush(uint sn, uint ts) // serial number, timestamp
         {
-            acklist.Add(new AckItem{ serialNumber = sn, timestamp = ts });
+            acklist.Add(new AckItem { serialNumber = sn, timestamp = ts });
         }
 
         // ikcp_parse_data
@@ -637,8 +641,8 @@ namespace kcp2k
                             seg.cmd = cmd;
                             seg.frg = frg;
                             seg.wnd = wnd;
-                            seg.ts  = ts;
-                            seg.seq_number  = sn;
+                            seg.ts = ts;
+                            seg.seq_number = sn;
                             seg.una = unacknowledged;
                             if (len > 0)
                             {
@@ -722,25 +726,23 @@ namespace kcp2k
             }
         }
 
-        // ikcp_flush
-        // flush remain ack segments.
-        // flush may output multiple <= MTU messages from MakeSpace / FlushBuffer.
-        // the amount of messages depends on the sliding window.
-        // configured by send/receive window sizes + congestion control.
-        // with congestion control, the window will be extremely small(!).
+        // 刷出剩余的 ACK 分片。
+        // flush 可能通过 MakeSpace / FlushBuffer 输出多条 <= MTU 的消息。
+        // 消息数量取决于滑动窗口，
+        // 由发送/接收窗口大小以及拥塞控制共同决定。
+        // 开启拥塞控制时，窗口会变得极小！
         public void Flush()
         {
-            int size  = 0;     // amount of bytes to flush. 'buffer ptr' in C.
+            int size = 0;     // amount of bytes to flush. 'buffer ptr' in C.
             bool lost = false; // lost segments
 
             // update needs to be called before flushing
             if (!updated) return;
 
-            // kcp only stack allocates a segment here for performance, leaving
-            // its data buffer null because this segment's data buffer is never
-            // used. that's fine in C, but in C# our segment is a class so we
-            // need to allocate and most importantly, not forget to deallocate
-            // it before returning.
+            // 原版 kcp 这里为了性能只在栈上分配一个 segment，
+            // 其 data 缓冲区为 null，因为这段数据根本不会用到。
+            // 这在 C 里没问题，但 C# 里 segment 是 class，必须真正分配，
+            // 更重要的是返回前不要忘记归还/释放。
             Segment seg = SegmentNew();
             seg.conv = conv;
             seg.cmd = CMD_ACK;
@@ -808,21 +810,18 @@ namespace kcp2k
             // it's send window, or remote window, whatever is smaller.
             // for our max
             uint cwnd_ = Math.Min(snd_wnd, rmt_wnd);
-            
             // Log.Info($"[Kcp] {(this is KcpServer ? "Server" : this is KcpClient ? "Client" : GetType().Name)} cwnd_={cwnd_}");
-       
-            // 双重否定：若开启了拥塞窗口，
-            // 则把可发送窗口限制为 cwnd。
-            //
+
+            // 双重否定：若开启了拥塞窗口，则把可发送窗口限制为 cwnd。
             // 注意这可能会大幅压缩窗口大小。
             // 在我们用超大窗口 32k 做最大消息尺寸测试时，
             // “拥塞窗口”会把它从 32000 压到 2。
             if (!nocwnd) cwnd_ = Math.Min(cwnd, cwnd_);
 
-            // move cwnd_ 'window size' messages from snd_queue to snd_buf
-            //   'snd_nxt' is what we want to send.
-            //   'snd_una' is what hasn't been acked yet.
-            //   copy up to 'cwnd_' difference between them (sliding window)
+            // 把最多 cwnd_ 个（窗口大小）消息从 snd_queue 移到 snd_buf
+            //   snd_nxt：下一个要发送的序号
+            //   snd_una：尚未被确认的最小序号
+            //   两者之差不超过 cwnd_（滑动窗口）
             while (Utils.TimeDiff(snd_nxt, snd_una + cwnd_) < 0)
             {
                 if (snd_queue.Count == 0) break;
@@ -979,7 +978,7 @@ namespace kcp2k
             // slap is time since last flush in milliseconds
             int slap = Utils.TimeDiff(current, ts_flush);
 
-            // hard limit: if 10s elapsed, always flush no matter what
+            // 硬性限制：若已过去 10 秒，无论如何都要 flush
             if (slap >= 10000 || slap < -10000)
             {
                 ts_flush = current;
@@ -993,8 +992,8 @@ namespace kcp2k
                 // increase last flush time by one interval
                 ts_flush += interval;
 
-                // if last flush is still behind, increase it to current + interval
-                // if (Utils.TimeDiff(current, ts_flush) >= 0) // original kcp.c
+                // 若上次 flush 时间仍落后于当前时间，则把它设为 current + interval
+                // if (Utils.TimeDiff(current, ts_flush) >= 0) // 原版 kcp.c
                 if (current >= ts_flush)                       // less confusing
                 {
                     ts_flush = current + interval;
@@ -1063,12 +1062,12 @@ namespace kcp2k
             mss = mtu - OVERHEAD;
         }
 
-        // ikcp_interval
+        // 设置协议内部工作间隔
         public void SetInterval(uint interval)
         {
             // clamp interval between 10 and 5000
-            if      (interval > 5000) interval = 5000;
-            else if (interval < 10)   interval = 10;
+            if (interval > 5000) interval = 5000;
+            else if (interval < 10) interval = 10;
             this.interval = interval;
         }
 
@@ -1091,13 +1090,7 @@ namespace kcp2k
                 rx_minrto = RTO_MIN;// 普通模式下，最小 RTO 为 100ms
             }
 
-            if (interval >= 0)
-            {
-                // clamp interval between 10 and 5000
-                if (interval > 5000) interval = 5000;
-                else if (interval < 10) interval = 10;
-                this.interval = interval;
-            }
+            this.SetInterval(interval);
 
             if (resend >= 0)
             {
@@ -1105,6 +1098,8 @@ namespace kcp2k
             }
 
             this.nocwnd = nocwnd;
+            Log.Info($"[Kcp]->{_name} SetNoDelay:rx_minrto {rx_minrto}"+
+                $"nodelay ={nodelay}, interval ={interval}, resend ={resend}, nocwnd ={nocwnd}");
         }
 
         // ikcp_wndsize
@@ -1120,6 +1115,10 @@ namespace kcp2k
                 // must >= max fragment size
                 rcv_wnd = Math.Max(receiveWindow, WND_RCV);
             }
+
+            Log.Info($"[Kcp] SetWindowSize: initialized sendWindow={sendWindow}," +
+             $"initialized receiveWindow ={receiveWindow}" +
+             $"final sendWindow={snd_wnd}, final receiveWindow={rcv_wnd}");
         }
     }
 }

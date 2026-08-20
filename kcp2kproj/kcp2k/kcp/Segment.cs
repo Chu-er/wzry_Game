@@ -31,11 +31,10 @@ namespace kcp2k
         // in other words, Encode only ever writes up to the above amount of bytes.
         internal MemoryStream data = new MemoryStream(Kcp.MTU_DEF);
 
-        // ikcp_encode_seg
-        // encode a segment into buffer.
-        // buffer is always Kcp.buffer. Kcp ctor creates the buffer of size:
-        // (mtu + OVERHEAD) * 3 bytes.
-        // in other words, Encode only ever writes up to the above amount of bytes.
+        // 把一个 segment 编码进缓冲区。
+        // buffer 始终是 Kcp.buffer。Kcp 构造函数创建的缓冲区大小为：
+        // (mtu + OVERHEAD) * 3 字节。
+        // 换句话说，Encode 最多只会写入上述这么多字节。
         internal int Encode(byte[] ptr, int offset)
         {
             int previousPosition = offset;
