@@ -379,8 +379,7 @@ namespace kcp2k
             }
         }
 
-        // ikcp_parse_ack
-        // removes the segment with 'sn' from send buffer
+        // 从发送缓冲区中移除序号为 sn 的那个分片（该包已被对端单独确认）
         internal void ParseAck(uint sn)
         {
             if (Utils.TimeDiff(sn, snd_una) < 0 || Utils.TimeDiff(sn, snd_nxt) >= 0)
