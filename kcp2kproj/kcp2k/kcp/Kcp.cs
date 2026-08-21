@@ -109,7 +109,7 @@ namespace kcp2k
         /// <summary>chuer added for debuging</summary>
         private readonly string _name;
         /// <summary>chuer added for debuging</summary>
-        public bool debug = false;
+        public bool debug = true;
         // ikcp_create
         // create a new kcp control object, 'conv' must equal in two endpoint
         // from the same connection.
@@ -359,6 +359,10 @@ namespace kcp2k
             }
             int rto = rx_srtt + Math.Max((int)interval, 4 * rx_rttval);
             rx_rto = Utils.Clamp(rto, rx_minrto, RTO_MAX);
+            if (debug)
+            {
+                Log.Info($"UpdateAck->{_name}: rtt={rtt}, rx_srtt={rx_srtt}, rx_rttval={rx_rttval}, rto={rto}, rx_rto={rx_rto}");
+            }
         }
 
         // ikcp_shrink_buf
@@ -401,18 +405,14 @@ namespace kcp2k
             }
         }
 
-        // ikcp_parse_una
-        // removes all unacknowledged segments with sequence numbers < una from send buffer
+        ///<summary>从发送缓冲区中移除所有序号 < una 的未确认分片（una 之前的包对端都已收到）</summary>
         internal void ParseUna(uint una)
         {
             int removed = 0;
             foreach (Segment seg in snd_buf)
             {
-                // if (Utils.TimeDiff(una, seg.sn) > 0)
                 if (seg.seq_number < una)
                 {
-                    // can't remove while iterating. remember how many to remove
-                    // and do it after the loop.
                     ++removed;
                     SegmentDelete(seg);
                 }
@@ -429,23 +429,19 @@ namespace kcp2k
         {
             // sn needs to be between snd_una and snd_nxt
             // if !(snd_una <= sn && sn < snd_nxt) return;
-
-            // if (Utils.TimeDiff(sn, snd_una) < 0)
-            if (sn < snd_una)
+            if (sn < snd_una)//这个序号早就确认过了,这是重复ACK
                 return;
 
-            // if (Utils.TimeDiff(sn, snd_nxt) >= 0)
-            if (sn >= snd_nxt)
+            if (sn >= snd_nxt)//这个序号本端还没发送出去,异常包
                 return;
 
             foreach (Segment seg in snd_buf)
             {
-                // if (Utils.TimeDiff(sn, seg.sn) < 0)
-                if (sn < seg.seq_number)
+                if (sn < seg.seq_number)//后面的分片比sn还要新 直接break
                 {
                     break;
                 }
-                else if (sn != seg.seq_number)
+                else if (sn != seg.seq_number)//sn>seq_number 
                 {
 #if !FASTACK_CONSERVE
                     seg.fastack++;
@@ -844,7 +840,7 @@ namespace kcp2k
 
             // calculate resent
             uint resent = fastresend > 0 ? (uint)fastresend : 0xffffffff;
-            uint rtomin = nodelay == 0 ? (uint)rx_rto >> 3 : 0;
+            uint rtomin = nodelay == 0 ? (uint)rx_rto >> 3 : 0;//普通模式：重传时间除以8
 
             // flush data segments
             int change = 0;
@@ -852,7 +848,7 @@ namespace kcp2k
             {
                 bool needsend = false;
 
-                // initial transmit
+                // 第一次发送
                 if (segment.xmit == 0)
                 {
                     needsend = true;
@@ -866,11 +862,11 @@ namespace kcp2k
                     needsend = true;
                     segment.xmit++;
                     xmit++;
-                    if (nodelay == 0)
+                    if (nodelay == 0) // nodelay == 0 表示普通模式（未开启无延迟模式）
                     {
                         segment.rto += Math.Max(segment.rto, rx_rto);
                     }
-                    else
+                    else//延迟模式：重传时间翻倍，变成1.5倍 指数仍然在涨 只是慢一点
                     {
                         int step = (nodelay < 2) ? segment.rto : rx_rto;
                         segment.rto += step / 2;
@@ -881,7 +877,7 @@ namespace kcp2k
                 // fast retransmit
                 else if (segment.fastack >= resent)
                 {
-                    if (segment.xmit <= fastlimit || fastlimit <= 0)
+                    if (segment.xmit <= fastlimit || fastlimit <= 0)//fastlimit 默认=5
                     {
                         needsend = true;
                         segment.xmit++;
@@ -908,8 +904,7 @@ namespace kcp2k
                         size += (int)segment.data.Position;
                     }
 
-                    // dead link happens if a message was resent N times, but an
-                    // ack was still not received.
+                    // 若一条消息已重传 N 次仍未收到 ACK，则判定为死链
                     if (segment.xmit >= dead_link)
                     {
                         state = -1;
@@ -1116,7 +1111,7 @@ namespace kcp2k
                 rcv_wnd = Math.Max(receiveWindow, WND_RCV);
             }
 
-            Log.Info($"[Kcp] SetWindowSize: initialized sendWindow={sendWindow}," +
+            Log.Info($"[Kcp]->{_name} SetWindowSize: initialized sendWindow={sendWindow}," +
              $"initialized receiveWindow ={receiveWindow}" +
              $"final sendWindow={snd_wnd}, final receiveWindow={rcv_wnd}");
         }

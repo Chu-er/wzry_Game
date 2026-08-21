@@ -56,7 +56,7 @@ KcpClient client = new KcpClient(
     config
 );
 
-// convenience function
+// conve  nience function
 void UpdateSeveralTimes(int amount)
 {
     // update serveral times to avoid flaky tests.
@@ -82,7 +82,6 @@ UpdateSeveralTimes(5);
 
 // send client to server
 client.Send(new byte[] { 0x01, 0x02 }, KcpChannel.Reliable);
-
 
 UpdateSeveralTimes(10);
 
