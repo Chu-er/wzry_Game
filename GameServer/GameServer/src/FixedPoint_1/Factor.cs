@@ -1,7 +1,13 @@
-﻿namespace ChuFixedPoint
+﻿using System;
+
+namespace ChuFixedPoint
 {
-    public class Factor
+    public struct Factor
     {
-        
+
+        public float ToDegrees()
+        {
+            throw new Exception("Not implemented");
+        }
     }
 }

@@ -126,6 +126,9 @@ csharp_prefer_simple_using_statement = true:suggestion
 dotnet_style_namespace_match_folder = false:none
 dotnet_diagnostic.IDE0130.severity = none
 
+# RCS1037: Remove trailing white-space
+dotnet_diagnostic.RCS1037.severity = none
+
 # XML project files
 [*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
 indent_size = 2
